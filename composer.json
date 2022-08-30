@@ -1,0 +1,22 @@
+{
+    "name": "model/multilang",
+    "description": "Multilang websites utilities",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Domenico Giambra",
+            "email": "zorinik@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {"Model\\Multilang\\": "src/"}
+    },
+    "suggest": {
+        "model/db": "In order to store dictionary on a MySQL database"
+    },
+    "require": {
+        "composer-runtime-api": "^2.1",
+        "model/config": "^0.5.13",
+        "model/cache": "^0.3.3"
+    }
+}
