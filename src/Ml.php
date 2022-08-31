@@ -67,6 +67,13 @@ class Ml
 						if (!isset($config['fallback']))
 							$config['fallback'] = ['en'];
 						$config['dictionary_storage'] = 'file';
+
+						$oldDictionaryFile = INCLUDE_PATH . 'app/config/Multilang/dictionary.php';
+						if (file_exists($oldDictionaryFile)) {
+							file_put_contents($oldDictionaryFile, str_replace('$this->dictionary =', 'return', file_get_contents($oldDictionaryFile)));
+							rename($oldDictionaryFile, INCLUDE_PATH . 'config/multilang_dictionary.php');
+						}
+
 						return $config;
 					}
 
