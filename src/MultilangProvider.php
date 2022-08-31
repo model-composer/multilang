@@ -1,7 +1,5 @@
 <?php namespace Model\Multilang;
 
-use Model\Db\MultilangProviderInterface;
-
 class MultilangProvider implements MultilangProviderInterface
 {
 	public static function dictionary(): array
