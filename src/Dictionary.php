@@ -1,6 +1,7 @@
 <?php namespace Model\Multilang;
 
 use Model\Cache\Cache;
+use Model\Db\Db;
 
 class Dictionary
 {
@@ -106,8 +107,24 @@ class Dictionary
 	 */
 	private static function retrieveFromDb(): array
 	{
-		// TODO
-		return [];
+		$db = Db::getConnection();
+
+		$dictionary = [];
+		foreach ($db->selectAll('model_dictionary_sections') as $section) {
+			$dictionary[$section['name']] = [
+				'words' => [],
+				'accessLevel' => $section['acl'],
+			];
+		}
+
+		foreach ($db->selectAll('model_dictionary') as $word) {
+			if (!isset($dictionary[$word['section']]))
+				continue;
+
+			$dictionary[$word['section']]['words'][$word['word']][$word['lang']] = $word['value'];
+		}
+
+		return $dictionary;
 	}
 
 	/**

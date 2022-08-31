@@ -8,7 +8,8 @@ class Dictionary extends AbstractMigration
 	{
 		$this->table('model_dictionary_sections')
 			->addColumn('name', 'string')
-			->addColumn('acl', 'string')
+			->addColumn('acl', 'enum', ['values' => ['user', 'root']])
+			->addIndex('name', ['unique' => true])
 			->create();
 
 		$this->table('model_dictionary')
