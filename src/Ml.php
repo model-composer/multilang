@@ -64,6 +64,9 @@ class Ml
 					if (defined('INCLUDE_PATH') and file_exists(INCLUDE_PATH . 'app/config/Multilang/config.php')) {
 						// ModEl 3 migration
 						require(INCLUDE_PATH . 'app/config/Multilang/config.php');
+						if (!isset($config['fallback']))
+							$config['fallback'] = ['en'];
+						$config['dictionary_storage'] = 'file';
 						return $config;
 					}
 

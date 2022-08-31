@@ -7,7 +7,9 @@ class DbProvider implements DbProviderInterface
 	public static function getMigrationsPaths(): array
 	{
 		return [
-			'vendor/model/multilang/migrations',
+			[
+				'path' => 'vendor/model/multilang/migrations',
+			],
 		];
 	}
 }
