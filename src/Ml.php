@@ -1,6 +1,7 @@
 <?php namespace Model\Multilang;
 
 use Model\Config\Config;
+use Model\ProvidersFinder\Providers;
 
 class Ml
 {
@@ -44,6 +45,25 @@ class Ml
 			self::setLang($browserLang);
 		else
 			self::setLang($config['default']);
+	}
+
+	/**
+	 * @return void
+	 */
+	public static function realign(): void
+	{
+		$dictionary = Dictionary::getFull();
+
+		$packagesWithProvider = Providers::find('MultilangProvider');
+		foreach ($packagesWithProvider as $package) {
+			$packageDictionary = $package['provider']::dictionary();
+			foreach ($packageDictionary as $sectionName => $section) {
+				foreach ($section['words'] as $word => $values) {
+					if (!isset($dictionary[$sectionName]['words'][$word]))
+						Dictionary::set($sectionName, $word, $values, $section['accessLevel']);
+				}
+			}
+		}
 	}
 
 	/**

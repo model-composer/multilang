@@ -5,8 +5,8 @@ use Model\Db\Db;
 
 class Dictionary
 {
-	/** @var array Dictionary cache */
-	private static array $dictionary;
+	/** @var array|null Dictionary cache */
+	private static ?array $dictionary = null;
 
 	/**
 	 * Gets a single word from the dictionary in the specified language
@@ -66,6 +66,66 @@ class Dictionary
 	}
 
 	/**
+	 * @param string $section
+	 * @param string $word
+	 * @param array $values
+	 * @param string $acl
+	 * @return void
+	 */
+	public static function set(string $section, string $word, array $values, string $acl = 'user'): void
+	{
+		$config = Ml::getConfig();
+
+		switch ($config['dictionary_storage']) {
+			case 'db':
+				$db = Db::getConnection();
+				$checkSection = $db->select('model_dictionary_sections', ['name' => $section]);
+				if (!$checkSection) {
+					$db->insert('model_dictionary_sections', [
+						'name' => $section,
+						'acl' => $acl,
+					]);
+				}
+
+				foreach ($values as $lang => $value) {
+					$checkWord = $db->select('model_dictionary', ['section' => $section, 'word' => $word, 'lang' => $lang]);
+					if ($checkWord)
+						$db->update('model_dictionary', $checkWord['id'], ['value' => $value]);
+					else
+						$db->insert('model_dictionary', ['section' => $section, 'word' => $word, 'lang' => $lang, 'value' => $value]);
+				}
+				break;
+
+			case 'file':
+				$dictionary = self::getFull();
+				if (!isset($dictionary[$section])) {
+					$dictionary[$section] = [
+						'accessLevel' => $acl,
+						'words' => [],
+					];
+				}
+
+				$dictionary[$section]['words'][$word] = array_merge($dictionary[$section]['words'][$word] ?? [], $values);
+
+				$filepath = self::getDictionaryFilePath($config);
+				file_put_contents($filepath, "<?php\nreturn " . var_export($dictionary, true) . ";\n");
+				break;
+		}
+
+		self::flushCache();
+	}
+
+	/**
+	 * @return void
+	 */
+	public static function flushCache(): void
+	{
+		$cache = Cache::getCacheAdapter();
+		$cache->deleteItem('model.multilang.dictionary');
+		self::$dictionary = null;
+	}
+
+	/**
 	 * Get full dictionary from cache
 	 *
 	 * @return array
@@ -73,7 +133,7 @@ class Dictionary
 	 */
 	public static function getFull(): array
 	{
-		if (!isset(self::$dictionary)) {
+		if (self::$dictionary === null) {
 			$cache = Cache::getCacheAdapter();
 
 			self::$dictionary = $cache->get('model.multilang.dictionary', function (\Symfony\Contracts\Cache\ItemInterface $item) {
@@ -133,8 +193,17 @@ class Dictionary
 	 */
 	private static function retrieveFromFile(array $config): array
 	{
-		$filepath = $config['filepath'] ?? 'config/multilang_dictionary.php';
-		$filepath = realpath(__DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..') . DIRECTORY_SEPARATOR . $filepath;
+		$filepath = self::getDictionaryFilePath($config);
 		return require $filepath;
+	}
+
+	/**
+	 * @param array $config
+	 * @return string
+	 */
+	private static function getDictionaryFilePath(array $config): string
+	{
+		$filepath = $config['filepath'] ?? 'config/multilang_dictionary.php';
+		return realpath(__DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..') . DIRECTORY_SEPARATOR . $filepath;
 	}
 }

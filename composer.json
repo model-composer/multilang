@@ -17,6 +17,7 @@
     "require": {
         "composer-runtime-api": "^2.1",
         "model/config": "^0.5.13",
-        "model/cache": "^0.3.3"
+        "model/cache": "^0.3.3",
+        "model/providers-finder": "^0.0.1"
     }
 }
