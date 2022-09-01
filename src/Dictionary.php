@@ -116,6 +116,35 @@ class Dictionary
 	}
 
 	/**
+	 * @param string $section
+	 * @param string $word
+	 * @return void
+	 */
+	public static function delete(string $section, string $word): void
+	{
+		$config = Ml::getConfig();
+
+		switch ($config['dictionary_storage']) {
+			case 'db':
+				$db = Db::getConnection();
+				$db->delete('model_dictionary', ['section' => $section, 'word' => $word]);
+				break;
+
+			case 'file':
+				$dictionary = self::getFull();
+				if (!isset($dictionary[$section]) or !isset($dictionary[$section]['words'][$word]))
+					return;
+
+				unset($dictionary[$section]['words'][$word]);
+				$filepath = self::getDictionaryFilePath($config);
+				file_put_contents($filepath, "<?php\nreturn " . var_export($dictionary, true) . ";\n");
+				break;
+		}
+
+		self::flushCache();
+	}
+
+	/**
 	 * @return void
 	 */
 	public static function flushCache(): void
@@ -205,5 +234,19 @@ class Dictionary
 	{
 		$filepath = $config['filepath'] ?? 'config/multilang_dictionary.php';
 		return realpath(__DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..') . DIRECTORY_SEPARATOR . $filepath;
+	}
+
+	/**
+	 * @param string $section
+	 * @return bool
+	 */
+	public static function isUserAuthorized(string $section): bool
+	{
+		$dictionary = self::getFull();
+
+		if (!isset($dictionary[$section]))
+			return false;
+
+		return ($dictionary[$section]['accessLevel'] === 'user' or (defined('DEBUG_MODE') and DEBUG_MODE));
 	}
 }
