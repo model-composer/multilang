@@ -185,16 +185,17 @@ class Dictionary
 		$config = Ml::getConfig();
 
 		return match ($config['dictionary_storage']) {
-			'db' => self::retrieveFromDb(),
+			'db' => self::retrieveFromDb($config),
 			'file' => self::retrieveFromFile($config),
 			default => throw new \Exception('Unknown dictionary storage type'),
 		};
 	}
 
 	/**
+	 * @param array $config
 	 * @return array
 	 */
-	private static function retrieveFromDb(): array
+	private static function retrieveFromDb(array $config): array
 	{
 		$db = Db::getConnection();
 
@@ -211,6 +212,31 @@ class Dictionary
 				continue;
 
 			$dictionary[$word['section']]['words'][$word['word']][$word['lang']] = $word['value'];
+		}
+
+		// If we recently switched from file to db storage, we have to populate the db
+		if (empty($dictionary) and file_exists(self::getDictionaryFilePath($config))) {
+			$dictionary_file = self::retrieveFromFile($config);
+
+			foreach ($dictionary_file as $sectionName => $section) {
+				$sectionId = $db->insert('model_dictionary_sections', [
+					'name' => $sectionName,
+					'acl' => $section['accessLevel'],
+				]);
+
+				foreach ($section['words'] as $wordKey => $langs) {
+					foreach ($langs as $lang => $word) {
+						$db->insert('model_dictionary', [
+							'section' => $sectionId,
+							'word' => $wordKey,
+							'lang' => $lang,
+							'value' => $word,
+						]);
+					}
+				}
+			}
+
+			return self::retrieveFromDb($config);
 		}
 
 		return $dictionary;
