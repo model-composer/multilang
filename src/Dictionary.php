@@ -236,6 +236,7 @@ class Dictionary
 				}
 			}
 
+			unlink(self::getDictionaryFilePath($config));
 			return self::retrieveFromDb($config);
 		}
 
