@@ -219,7 +219,7 @@ class Dictionary
 			$dictionary_file = self::retrieveFromFile($config);
 
 			foreach ($dictionary_file as $sectionName => $section) {
-				$sectionId = $db->insert('model_dictionary_sections', [
+				$db->insert('model_dictionary_sections', [
 					'name' => $sectionName,
 					'acl' => $section['accessLevel'],
 				]);
@@ -227,7 +227,7 @@ class Dictionary
 				foreach ($section['words'] as $wordKey => $langs) {
 					foreach ($langs as $lang => $word) {
 						$db->insert('model_dictionary', [
-							'section' => $sectionId,
+							'section' => $sectionName,
 							'word' => $wordKey,
 							'lang' => $lang,
 							'value' => $word,
