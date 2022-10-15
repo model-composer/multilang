@@ -1,8 +1,8 @@
 <?php namespace Model\Multilang;
 
-use Model\Db\DbProviderInterface;
+use Model\Db\AbstractDbProvider;
 
-class DbProvider implements DbProviderInterface
+class DbProvider extends AbstractDbProvider
 {
 	public static function getMigrationsPaths(): array
 	{
