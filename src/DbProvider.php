@@ -34,6 +34,9 @@ class DbProvider extends AbstractDbProvider
 					$mlFields[] = $f;
 			}
 
+			if (!isset($options['joins']))
+				$options['joins'] = [];
+
 			$options['joins'][] = [
 				'type' => 'LEFT',
 				'table' => $mlTableName,
