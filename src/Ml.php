@@ -1,5 +1,6 @@
 <?php namespace Model\Multilang;
 
+use Model\Cache\Cache;
 use Model\Config\Config;
 use Model\ProvidersFinder\Providers;
 
@@ -77,6 +78,54 @@ class Ml
 	}
 
 	/**
+	 * @param \Model\Db\DbConnection $db
+	 * @return array
+	 * @throws \Exception
+	 */
+	public static function getTables(\Model\Db\DbConnection $db): array
+	{
+		$cache = Cache::getCacheAdapter();
+		return $cache->get('model.multilang.tables.' . $db->getName(), function (\Symfony\Contracts\Cache\ItemInterface $item) use ($db) {
+			Cache::registerInvalidation('keys', ['model.multilang.tables.' . $db->getName()]);
+
+			$config = self::getConfig();
+
+			$tables = [];
+			foreach (($config['tables'][$db->getName()] ?? []) as $table => $tableData) {
+				if (is_numeric($table) and is_string($tableData)) {
+					$table = $tableData;
+					$tableData = [];
+				}
+				if (!isset($tableData['fields']))
+					$tableData = ['fields' => $tableData];
+
+				$tableData = array_merge([
+					'parent_field' => 'parent',
+					'lang_field' => 'lang',
+					'table_suffix' => '_texts',
+					'fields' => [],
+				], $tableData);
+
+				if (count($tableData['fields']) === 0) {
+					try {
+						$tableModel = $db->getParser()->getTable($table . $tableData['table_suffix']);
+						foreach ($tableModel->columns as $columnName => $column) {
+							if (in_array($columnName, $tableModel->primary) or $columnName === $tableData['parent_field'] or $columnName === $tableData['lang_field'])
+								continue;
+							$tableData['fields'][] = $columnName;
+						}
+					} catch (\Exception $e) {
+					}
+				}
+
+				$tables[$table] = $tableData;
+			}
+
+			return $tables;
+		});
+	}
+
+	/**
 	 * Config retriever
 	 *
 	 * @return array
@@ -110,6 +159,13 @@ class Ml
 						'tables' => [],
 						'dictionary_storage' => 'db',
 					];
+				},
+			],
+			[
+				'version' => '0.2.0',
+				'migration' => function (array $config, string $env) {
+					$config['tables'] = ['primary' => $config['tables']];
+					return $config;
 				},
 			],
 		]);
