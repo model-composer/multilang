@@ -2,5 +2,13 @@
 
 abstract class AbstractMultilangProvider
 {
-	abstract public static function dictionary(): array;
+	public static function dictionary(): array
+	{
+		return [];
+	}
+
+	public static function tables(): array
+	{
+		return [];
+	}
 }

@@ -92,8 +92,13 @@ class Ml
 
 				$config = self::getConfig();
 
+				$tablesFromConfig = $config['tables'][$db->getName()] ?? [];
+				$packagesWithProvider = Providers::find('MultilangProvider');
+				foreach ($packagesWithProvider as $package)
+					$tablesFromConfig = array_merge($tablesFromConfig, $package['provider']::tables());
+
 				$tables = [];
-				foreach (($config['tables'][$db->getName()] ?? []) as $table => $tableData) {
+				foreach ($tablesFromConfig as $table => $tableData) {
 					if (is_numeric($table) and is_string($tableData)) {
 						$table = $tableData;
 						$tableData = [];
