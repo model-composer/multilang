@@ -136,6 +136,26 @@ class Ml
 	}
 
 	/**
+	 * @param string $table
+	 * @return string|null
+	 */
+	public static function getTableFor(\Model\Db\DbConnection $db, string $table): ?string
+	{
+		$tables = self::getTables($db);
+		return array_key_exists($table, $tables) ? $table . $tables[$table]['table_suffix'] : null;
+	}
+
+	/**
+	 * @param string $table
+	 * @return array|null
+	 */
+	public static function getTableOptionsFor(\Model\Db\DbConnection $db, string $table): ?array
+	{
+		$tables = self::getTables($db);
+		return $tables[$table] ?? null;
+	}
+
+	/**
 	 * Config retriever
 	 *
 	 * @return array
