@@ -5,8 +5,6 @@ use Model\Db\DbConnection;
 
 class DbProvider extends AbstractDbProvider
 {
-	private static array $tablesCache = [];
-
 	/**
 	 * @return array|\string[][]
 	 */
@@ -30,7 +28,7 @@ class DbProvider extends AbstractDbProvider
 	 */
 	public static function alterSelect(DbConnection $db, string $table, array $where, array $options): array
 	{
-		$mlTables = self::getTables($db);
+		$mlTables = Ml::getTables($db);
 
 		if (isset($mlTables[$table])) {
 			$mlTableConfig = $mlTables[$table];
@@ -74,7 +72,7 @@ class DbProvider extends AbstractDbProvider
 	public static function alterSelectResult(DbConnection $db, string $table, array $row, array $options): array
 	{
 		$config = Ml::getConfig();
-		$mlTables = self::getTables($db);
+		$mlTables = Ml::getTables($db);
 
 		if (!$config['fallback'] or !isset($mlTables[$table]) or !($options['multilang_fallback'] ?? true))
 			return $row;
@@ -106,18 +104,6 @@ class DbProvider extends AbstractDbProvider
 		}
 
 		return $row;
-	}
-
-	/**
-	 * @param DbConnection $db
-	 * @return array
-	 */
-	private static function getTables(DbConnection $db): array
-	{
-		if (!isset(self::$tablesCache[$db->getName()]))
-			self::$tablesCache[$db->getName()] = Ml::getTables($db);
-
-		return self::$tablesCache[$db->getName()];
 	}
 
 	/**
