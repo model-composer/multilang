@@ -2,6 +2,7 @@
 
 use Model\Db\AbstractDbProvider;
 use Model\Db\DbConnection;
+use Model\DbParser\Table;
 
 class DbProvider extends AbstractDbProvider
 {
@@ -121,5 +122,25 @@ class DbProvider extends AbstractDbProvider
 			}
 		}
 		return $atLeastOne;
+	}
+
+	/**
+	 * @param DbConnection $db
+	 * @param string $table
+	 * @param Table $tableModel
+	 * @return Table
+	 */
+	public static function alterTableModel(DbConnection $db, string $table, Table $tableModel): Table
+	{
+		$mlTables = \Model\Multilang\Ml::getTablesConfig($db);
+		foreach ($mlTables as $mlTable => $mlTableOptions) {
+			if ($mlTable . $mlTableOptions['table_suffix'] === $table and array_key_exists($mlTable, $db->getConfig()['linked_tables'])) {
+				$customTableModel = $db->getParser()->getTable($db->getConfig()['linked_tables'][$mlTable] . $mlTableOptions['table_suffix']);
+				$tableModel->loadColumns($customTableModel->columns, false);
+				break;
+			}
+		}
+
+		return $tableModel;
 	}
 }

@@ -90,29 +90,9 @@ class Ml
 			self::$tablesCache[$db->getName()] = $cache->get('model.multilang.tables.' . $db->getName(), function (\Symfony\Contracts\Cache\ItemInterface $item) use ($db) {
 				Cache::registerInvalidation('keys', ['model.multilang.tables.' . $db->getName()]);
 
-				$config = self::getConfig();
+				$tables = self::getTablesConfig($db);
 
-				$tablesFromConfig = $config['tables'][$db->getName()] ?? [];
-				$packagesWithProvider = Providers::find('MultilangProvider');
-				foreach ($packagesWithProvider as $package)
-					$tablesFromConfig = array_merge($tablesFromConfig, $package['provider']::tables());
-
-				$tables = [];
-				foreach ($tablesFromConfig as $table => $tableData) {
-					if (is_numeric($table) and is_string($tableData)) {
-						$table = $tableData;
-						$tableData = [];
-					}
-					if (!isset($tableData['fields']))
-						$tableData = ['fields' => $tableData];
-
-					$tableData = array_merge([
-						'parent_field' => 'parent',
-						'lang_field' => 'lang',
-						'table_suffix' => '_texts',
-						'fields' => [],
-					], $tableData);
-
+				foreach ($tables as $table => &$tableData) {
 					if (count($tableData['fields']) === 0) {
 						try {
 							$tableModel = $db->getTable($table . $tableData['table_suffix']);
@@ -124,8 +104,6 @@ class Ml
 						} catch (\Exception $e) {
 						}
 					}
-
-					$tables[$table] = $tableData;
 				}
 
 				return $tables;
@@ -133,6 +111,39 @@ class Ml
 		}
 
 		return self::$tablesCache[$db->getName()];
+	}
+
+	/**
+	 * @param \Model\Db\DbConnection $db
+	 * @return array
+	 */
+	public static function getTablesConfig(\Model\Db\DbConnection $db): array
+	{
+		$config = self::getConfig();
+
+		$tablesFromConfig = $config['tables'][$db->getName()] ?? [];
+		$packagesWithProvider = Providers::find('MultilangProvider');
+		foreach ($packagesWithProvider as $package)
+			$tablesFromConfig = array_merge($tablesFromConfig, $package['provider']::tables());
+
+		$tables = [];
+		foreach ($tablesFromConfig as $table => $tableData) {
+			if (is_numeric($table) and is_string($tableData)) {
+				$table = $tableData;
+				$tableData = [];
+			}
+			if (!isset($tableData['fields']))
+				$tableData = ['fields' => $tableData];
+
+			$tables[$table] = array_merge([
+				'parent_field' => 'parent',
+				'lang_field' => 'lang',
+				'table_suffix' => '_texts',
+				'fields' => [],
+			], $tableData);
+		}
+
+		return $tables;
 	}
 
 	/**
