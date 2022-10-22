@@ -115,7 +115,7 @@ class Ml
 
 					if (count($tableData['fields']) === 0) {
 						try {
-							$tableModel = $db->getParser()->getTable($table . $tableData['table_suffix']);
+							$tableModel = $db->getTable($table . $tableData['table_suffix']);
 							foreach ($tableModel->columns as $columnName => $column) {
 								if (in_array($columnName, $tableModel->primary) or $columnName === $tableData['parent_field'] or $columnName === $tableData['lang_field'])
 									continue;
