@@ -124,7 +124,7 @@ class Ml
 		$tablesFromConfig = $config['tables'][$db->getName()] ?? [];
 		$packagesWithProvider = Providers::find('MultilangProvider', $ignorePackages);
 		foreach ($packagesWithProvider as $package)
-			$tablesFromConfig = array_merge($tablesFromConfig, $package['provider']::tables());
+			$tablesFromConfig = array_merge($tablesFromConfig, $package['provider']::tables($db));
 
 		$tables = [];
 		foreach ($tablesFromConfig as $table => $tableData) {
