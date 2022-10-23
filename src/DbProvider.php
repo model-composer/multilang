@@ -21,6 +21,8 @@ class DbProvider extends AbstractDbProvider
 	}
 
 	/**
+	 * Add a join for the main table and for every other joined table, if they are marked as multilanguage
+	 *
 	 * @param DbConnection $db
 	 * @param string $table
 	 * @param array $where
@@ -28,6 +30,24 @@ class DbProvider extends AbstractDbProvider
 	 * @return array
 	 */
 	public static function alterSelect(DbConnection $db, string $table, array $where, array $options): array
+	{
+		$options['joins'] = $db->getBuilder()->normalizeJoins($options['alias'] ?? $table, $options['joins'] ?? []);
+
+		$originalJoins = $options['joins'];
+		$mainTableJoin = self::getJoinFor($db, $table, $options, $options['alias'] ?? $table);
+		if ($mainTableJoin)
+			$options['joins'][] = $mainTableJoin;
+
+		foreach ($originalJoins as $join) {
+			$langJoin = self::getJoinFor($db, $join['table'], $options, $join['alias'] ?? $join['table']);
+			if ($langJoin)
+				$options['joins'][] = $langJoin;
+		}
+
+		return [$where, $options];
+	}
+
+	private static function getJoinFor(DbConnection $db, string $table, array $options, string $alias): ?array
 	{
 		$mlTables = Ml::getTables($db);
 
@@ -45,22 +65,19 @@ class DbProvider extends AbstractDbProvider
 					$mlFields[] = $f;
 			}
 
-			if (!isset($options['joins']))
-				$options['joins'] = [];
-
-			$options['joins'][] = [
+			return [
 				'type' => 'LEFT',
 				'table' => $mlTableName,
-				'alias' => 'lang',
+				'alias' => $alias . '_lang',
 				'on' => [
 					$tableModel->primary[0] => $mlTableConfig['parent_field'],
-					$db->parseColumn($mlTableConfig['lang_field'], 'lang') . ' LIKE ' . $db->parseValue($options['lang'] ?? Ml::getLang()),
+					$db->parseColumn($mlTableConfig['lang_field'], $alias . '_lang') . ' LIKE ' . $db->parseValue($options['lang'] ?? Ml::getLang()),
 				],
 				'fields' => $mlFields,
 			];
 		}
 
-		return [$where, $options];
+		return null;
 	}
 
 	/**
@@ -87,10 +104,27 @@ class DbProvider extends AbstractDbProvider
 		if (self::checkIfValidForFallback($row, $mlTable))
 			return $row;
 
-		foreach (($options['joins'] ?? []) as $idx => $join) {
-			if (isset($join['alias']) and in_array($join['alias'], ['lang', 'custom', 'custom_lang']))
-				unset($options['joins'][$idx]);
+		// Remove all previously set multilang joins
+		$newJoins = [];
+		foreach (($options['joins'] ?? []) as $join) {
+			$isMl = false;
+
+			// Look for the main table
+			if (isset($join['alias']) and $join['alias'] === ($options['alias'] ?? $table) . '_lang')
+				$isMl = true;
+
+			// Look for other joined tables
+			foreach (($options['joins'] ?? []) as $subjoin) {
+				if (isset($join['alias']) and $join['alias'] === ($subjoin['alias'] ?? $subjoin['table']) . '_lang') {
+					$isMl = true;
+					break;
+				}
+			}
+
+			if (!$isMl)
+				$newJoins[] = $join;
 		}
+		$options['joins'] = $newJoins;
 
 		foreach ($config['fallback'] as $l) {
 			if ($options['lang'] === $l)
