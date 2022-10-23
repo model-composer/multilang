@@ -7,7 +7,7 @@ abstract class AbstractMultilangProvider
 		return [];
 	}
 
-	public static function tables(): array
+	public static function tables(\Model\Db\DbConnection $db): array
 	{
 		return [];
 	}
