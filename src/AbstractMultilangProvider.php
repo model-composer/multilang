@@ -1,6 +1,8 @@
 <?php namespace Model\Multilang;
 
-abstract class AbstractMultilangProvider
+use Model\ProvidersFinder\AbstractProvider;
+
+abstract class AbstractMultilangProvider extends AbstractProvider
 {
 	public static function dictionary(): array
 	{

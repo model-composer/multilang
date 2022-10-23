@@ -117,12 +117,12 @@ class Ml
 	 * @param \Model\Db\DbConnection $db
 	 * @return array
 	 */
-	public static function getTablesConfig(\Model\Db\DbConnection $db, array $ignorePackages = []): array
+	public static function getTablesConfig(\Model\Db\DbConnection $db): array
 	{
 		$config = self::getConfig();
 
 		$tablesFromConfig = $config['tables'][$db->getName()] ?? [];
-		$packagesWithProvider = Providers::find('MultilangProvider', $ignorePackages);
+		$packagesWithProvider = Providers::find('MultilangProvider');
 		foreach ($packagesWithProvider as $package)
 			$tablesFromConfig = array_merge($tablesFromConfig, $package['provider']::tables($db));
 
