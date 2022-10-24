@@ -10,6 +10,16 @@ class Ml
 	private static array $tablesCache = [];
 
 	/**
+	 * @return array
+	 * @throws \Exception
+	 */
+	public static function getLangs(): array
+	{
+		$config = self::getConfig();
+		return $config['langs'];
+	}
+
+	/**
 	 * @return string
 	 */
 	public static function getLang(): string
@@ -25,8 +35,7 @@ class Ml
 	 */
 	public static function setLang(string $lang): void
 	{
-		$config = self::getConfig();
-		if (!in_array($lang, $config['langs']))
+		if (!in_array($lang, self::getLangs()))
 			throw new \Exception('Unsupported lang');
 
 		self::$lang = $lang;
@@ -43,7 +52,8 @@ class Ml
 
 		$config = self::getConfig();
 
-		if ($browserLang and in_array($browserLang, $config['langs']))
+		$langs = self::getLangs();
+		if ($browserLang and in_array($browserLang, $langs))
 			self::setLang($browserLang);
 		else
 			self::setLang($config['default']);
