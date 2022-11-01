@@ -31,6 +31,9 @@ class DbProvider extends AbstractDbProvider
 	 */
 	public static function alterSelect(DbConnection $db, string $table, array $where, array $options): array
 	{
+		if (!isset($options['lang']))
+			$options['lang'] = Ml::getLang();
+
 		$options['joins'] = $db->getBuilder()->normalizeJoins($options['alias'] ?? $table, $options['joins'] ?? []);
 
 		$originalJoins = $options['joins'];
@@ -71,7 +74,7 @@ class DbProvider extends AbstractDbProvider
 				'alias' => $alias . '_lang',
 				'on' => [
 					$tableModel->primary[0] => $mlTableConfig['parent_field'],
-					$db->parseColumn($mlTableConfig['lang_field'], $alias . '_lang') . ' LIKE ' . $db->parseValue($options['lang'] ?? Ml::getLang()),
+					$db->parseColumn($mlTableConfig['lang_field'], $alias . '_lang') . ' LIKE ' . $db->parseValue($options['lang']),
 				],
 				'fields' => $mlFields,
 			];
