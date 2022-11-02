@@ -77,6 +77,7 @@ class DbProvider extends AbstractDbProvider
 					$db->parseColumn($mlTableConfig['lang_field'], $alias . '_lang') . ' LIKE ' . $db->parseValue($options['lang']),
 				],
 				'fields' => $mlFields,
+				'injected' => true,
 			];
 		}
 
@@ -107,24 +108,10 @@ class DbProvider extends AbstractDbProvider
 		if (self::checkIfValidForFallback($row, $mlTable))
 			return $row;
 
-		// Remove all previously set multilang joins
+		// Remove all previously injected joins
 		$newJoins = [];
 		foreach (($options['joins'] ?? []) as $join) {
-			$isMl = false;
-
-			// Look for the main table
-			if (isset($join['alias']) and $join['alias'] === ($options['alias'] ?? $table) . '_lang')
-				$isMl = true;
-
-			// Look for other joined tables
-			foreach (($options['joins'] ?? []) as $subjoin) {
-				if (isset($join['alias']) and $join['alias'] === ($subjoin['alias'] ?? $subjoin['table']) . '_lang') {
-					$isMl = true;
-					break;
-				}
-			}
-
-			if (!$isMl)
+			if (!($join['injected'] ?? false))
 				$newJoins[] = $join;
 		}
 		$options['joins'] = $newJoins;
