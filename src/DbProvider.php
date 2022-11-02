@@ -39,9 +39,9 @@ class DbProvider extends AbstractDbProvider
 		$originalJoins = $options['joins'];
 		$mainTableJoin = self::getJoinFor($db, $table, $options, $options['alias'] ?? $table);
 		if ($mainTableJoin) {
-			$alreadyExisting = false;
-			foreach ($originalJoins as $join) {
-				if ($join['table'] === $mainTableJoin['table'])
+			$alreadyExisting = $table === $mainTableJoin['table'];
+			foreach ($originalJoins as $origJoin) {
+				if ($origJoin['table'] === $mainTableJoin['table'])
 					$alreadyExisting = true;
 			}
 			if (!$alreadyExisting)
@@ -51,9 +51,9 @@ class DbProvider extends AbstractDbProvider
 		foreach ($originalJoins as $join) {
 			$langJoin = self::getJoinFor($db, $join['table'], $options, $join['alias'] ?? $join['table']);
 			if ($langJoin) {
-				$alreadyExisting = false;
-				foreach ($originalJoins as $join) {
-					if ($join['table'] === $langJoin['table'])
+				$alreadyExisting = $table === $langJoin['table'];
+				foreach ($originalJoins as $origJoin) {
+					if ($origJoin['table'] === $langJoin['table'])
 						$alreadyExisting = true;
 				}
 				if (!$alreadyExisting)
