@@ -25,11 +25,11 @@ class DbProvider extends AbstractDbProvider
 	 *
 	 * @param DbConnection $db
 	 * @param string $table
-	 * @param array $where
+	 * @param array|int $where
 	 * @param array $options
 	 * @return array
 	 */
-	public static function alterSelect(DbConnection $db, string $table, array $where, array $options): array
+	public static function alterSelect(DbConnection $db, string $table, array|int $where, array $options): array
 	{
 		if (!isset($options['lang']))
 			$options['lang'] = Ml::getLang();
