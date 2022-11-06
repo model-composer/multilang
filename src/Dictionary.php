@@ -1,6 +1,7 @@
 <?php namespace Model\Multilang;
 
 use Model\Cache\Cache;
+use Model\Config\Config;
 use Model\Db\Db;
 
 class Dictionary
@@ -18,7 +19,7 @@ class Dictionary
 	 */
 	public static function get(string $word, ?string $lang = null): string
 	{
-		$config = Ml::getConfig();
+		$config = Config::get('multilang');
 
 		if ($lang === null)
 			$lang = Ml::getLang();
@@ -74,7 +75,7 @@ class Dictionary
 	 */
 	public static function set(string $section, string $word, array $values, string $acl = 'user'): void
 	{
-		$config = Ml::getConfig();
+		$config = Config::get('multilang');
 
 		switch ($config['dictionary_storage']) {
 			case 'db':
@@ -122,7 +123,7 @@ class Dictionary
 	 */
 	public static function delete(string $section, string $word): void
 	{
-		$config = Ml::getConfig();
+		$config = Config::get('multilang');
 
 		switch ($config['dictionary_storage']) {
 			case 'db':
@@ -182,7 +183,7 @@ class Dictionary
 	 */
 	private static function retrieveFull(): array
 	{
-		$config = Ml::getConfig();
+		$config = Config::get('multilang');
 
 		return match ($config['dictionary_storage']) {
 			'db' => self::retrieveFromDb($config),

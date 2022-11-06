@@ -1,5 +1,6 @@
 <?php namespace Model\Multilang;
 
+use Model\Config\Config;
 use Model\Db\AbstractDbProvider;
 use Model\Db\DbConnection;
 use Model\DbParser\Table;
@@ -11,7 +12,7 @@ class DbProvider extends AbstractDbProvider
 	 */
 	public static function getMigrationsPaths(): array
 	{
-		$config = Ml::getConfig();
+		$config = Config::get('multilang');
 
 		return $config['dictionary_storage'] === 'db' ? [
 			[
@@ -107,7 +108,7 @@ class DbProvider extends AbstractDbProvider
 	 */
 	public static function alterSelectResult(DbConnection $db, string $table, array $row, array $options): array
 	{
-		$config = Ml::getConfig();
+		$config = Config::get('multilang');
 		$mlTables = Ml::getTables($db);
 
 		if (!$config['fallback'] or !isset($mlTables[$table]) or !($options['multilang_fallback'] ?? true))

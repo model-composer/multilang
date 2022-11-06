@@ -15,7 +15,7 @@ class Ml
 	 */
 	public static function getLangs(): array
 	{
-		$config = self::getConfig();
+		$config = Config::get('multilang');
 		return $config['langs'];
 	}
 
@@ -50,7 +50,7 @@ class Ml
 		if (isset($_SERVER, $_SERVER['HTTP_ACCEPT_LANGUAGE']))
 			$browserLang = strtolower(substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2));
 
-		$config = self::getConfig();
+		$config = Config::get('multilang');
 
 		$langs = self::getLangs();
 		if ($browserLang and in_array($browserLang, $langs))
@@ -129,7 +129,7 @@ class Ml
 	 */
 	public static function getTablesConfig(\Model\Db\DbConnection $db): array
 	{
-		$config = self::getConfig();
+		$config = Config::get('multilang');
 
 		$tablesFromConfig = $config['tables'][$db->getName()] ?? [];
 		$packagesWithProvider = Providers::find('MultilangProvider');
@@ -174,51 +174,5 @@ class Ml
 	{
 		$tables = self::getTables($db);
 		return $tables[$table] ?? null;
-	}
-
-	/**
-	 * Config retriever
-	 *
-	 * @return array
-	 * @throws \Exception
-	 */
-	public static function getConfig(): array
-	{
-		return Config::get('multilang', [
-			[
-				'version' => '0.1.0',
-				'migration' => function (array $config, string $env) {
-					if ($config) // Already existing
-						return $config;
-
-					if (defined('INCLUDE_PATH') and file_exists(INCLUDE_PATH . 'app/config/Multilang/config.php')) {
-						// ModEl 3 migration
-						require(INCLUDE_PATH . 'app/config/Multilang/config.php');
-						if (!isset($config['fallback']))
-							$config['fallback'] = ['en'];
-						$config['dictionary_storage'] = 'file';
-
-						return $config;
-					}
-
-					return [
-						'langs' => ['it', 'en'],
-						'default' => 'it',
-						'fallback' => ['en'],
-						'type' => 'url',
-						'hide-dictionary' => false, // TODO: serve ancora in ModEl 4?
-						'tables' => [],
-						'dictionary_storage' => 'db',
-					];
-				},
-			],
-			[
-				'version' => '0.2.0',
-				'migration' => function (array $config, string $env) {
-					$config['tables'] = ['primary' => $config['tables']];
-					return $config;
-				},
-			],
-		]);
 	}
 }
