@@ -85,6 +85,8 @@ class DbProvider extends AbstractDbProvider
 						];
 					}
 				}
+			} else {
+				$new[] = $query;
 			}
 		}
 
