@@ -21,6 +21,82 @@ class DbProvider extends AbstractDbProvider
 		] : [];
 	}
 
+	public static function alterInsert(DbConnection $db, array $queries): array
+	{
+		$mlTables = Ml::getTables($db);
+
+		$new = [];
+		foreach ($queries as $query) {
+			if (isset($mlTables[$query['table']])) {
+				$mlTableConfig = $mlTables[$query['table']];
+
+				$mlTableName = $query['table'] . $mlTableConfig['table_suffix'];
+				$mlTableModel = $db->getTable($mlTableName);
+
+				$mlFields = [];
+				foreach ($mlTableConfig['fields'] as $f) {
+					if (isset($mlTableModel->columns[$f]) and $mlTableModel->columns[$f]['real'])
+						$mlFields[] = $f;
+				}
+
+				foreach ($query['data'] as $row) {
+					$mainRow = [];
+
+					$mlRows = [];
+					foreach (Ml::getLangs() as $l) {
+						$mlRows[$l] = [
+							$mlTableConfig['lang_field'] => $l,
+						];
+					}
+
+					foreach ($row as $k => $v) {
+						if (in_array($k, $mlFields)) {
+							if (is_array($v)) {
+								foreach ($v as $l => $vl)
+									$mlRows[$l][$k] = $vl;
+							} else {
+								foreach (Ml::getLangs() as $l)
+									$mlRows[$l][$k] = $v;
+							}
+						} else {
+							$mainRow[$k] = $v;
+						}
+					}
+
+					$mainRowIdx = count($new);
+					$new[] = [
+						'table' => $query['table'],
+						'data' => $mainRow,
+						'options' => $query['options'],
+					];
+
+					foreach ($mlRows as $mlRow) {
+						$new[] = [
+							'table' => $mlTableName,
+							'data' => $mlRow,
+							'options' => array_merge($query['options'], [
+								'replace_ids' => [
+									[
+										'from' => $mainRowIdx,
+										'field' => $mlTableConfig['parent_field'],
+									],
+								],
+							]),
+						];
+					}
+				}
+			}
+		}
+
+		return $new;
+	}
+
+	public static function alterUpdate(DbConnection $db, array $queries): array
+	{
+		// TODO
+		return $queries;
+	}
+
 	/**
 	 * Add a join for the main table and for every other joined table, if they are marked as multilanguage
 	 *
