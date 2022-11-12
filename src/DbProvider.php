@@ -39,7 +39,7 @@ class DbProvider extends AbstractDbProvider
 						$mlFields[] = $f;
 				}
 
-				foreach ($query['data'] as $row) {
+				foreach ($query['rows'] as $row) {
 					$mainRow = [];
 
 					$mlRows = [];
@@ -66,24 +66,27 @@ class DbProvider extends AbstractDbProvider
 					$mainRowIdx = count($new);
 					$new[] = [
 						'table' => $query['table'],
-						'data' => $mainRow,
+						'rows' => [$mainRow],
 						'options' => $query['options'],
 					];
 
-					foreach ($mlRows as $mlRow) {
-						$new[] = [
-							'table' => $mlTableName,
-							'data' => $mlRow,
-							'options' => array_merge($query['options'], [
-								'replace_ids' => [
-									[
-										'from' => $mainRowIdx,
-										'field' => $mlTableConfig['parent_field'],
-									],
+					$mlInsert = [
+						'table' => $mlTableName,
+						'rows' => [],
+						'options' => array_merge($query['options'], [
+							'replace_ids' => [
+								[
+									'from' => $mainRowIdx,
+									'field' => $mlTableConfig['parent_field'],
 								],
-							]),
-						];
-					}
+							],
+						]),
+					];
+
+					foreach ($mlRows as $mlRow)
+						$mlInsert['rows'][] = $mlRow;
+
+					$new[] = $mlInsert;
 				}
 			} else {
 				$new[] = $query;
