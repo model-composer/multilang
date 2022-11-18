@@ -46,17 +46,21 @@ class Ml
 	 */
 	private static function setDefaultLang(): void
 	{
+		$config = Config::get('multilang');
+		if ($config['default']) {
+			self::setLang($config['default']);
+			return;
+		}
+
 		$browserLang = null;
 		if (isset($_SERVER, $_SERVER['HTTP_ACCEPT_LANGUAGE']))
-			$browserLang = strtolower(substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2));
-
-		$config = Config::get('multilang');
+			$browserLang = mb_strtolower(substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2));
 
 		$langs = self::getLangs();
 		if ($browserLang and in_array($browserLang, $langs))
 			self::setLang($browserLang);
 		else
-			self::setLang($config['default']);
+			throw new \Exception('Unknown default lang');
 	}
 
 	/**
