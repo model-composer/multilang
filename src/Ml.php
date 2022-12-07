@@ -101,8 +101,9 @@ class Ml
 	{
 		if (!isset(self::$tablesCache[$db->getName()])) {
 			$cache = Cache::getCacheAdapter();
-			self::$tablesCache[$db->getName()] = $cache->get('model.multilang.tables.' . $db->getName(), function (\Symfony\Contracts\Cache\ItemInterface $item) use ($db) {
-				Cache::registerInvalidation('keys', ['model.multilang.tables.' . $db->getName()]);
+			self::$tablesCache[$db->getName()] = $cache->get('model.multilang.tablesconfig.' . $db->getName(), function (\Symfony\Contracts\Cache\ItemInterface $item) use ($db) {
+				Cache::registerInvalidation('keys', ['model.multilang.tablesconfig.' . $db->getName()]);
+				$item->expiresAfter(3600 * 24);
 
 				$tables = self::getTablesConfig($db);
 
