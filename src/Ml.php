@@ -60,7 +60,7 @@ class Ml
 		if ($browserLang and in_array($browserLang, $langs))
 			self::setLang($browserLang);
 		else
-			throw new \Exception('Unknown default lang');
+			self::setLang($langs[0]);
 	}
 
 	/**
