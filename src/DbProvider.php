@@ -121,7 +121,7 @@ class DbProvider extends AbstractDbProvider
 		$options['joins'] = $db->getBuilder()->normalizeJoins($options['alias'] ?? $table, $options['joins'] ?? []);
 
 		$originalJoins = $options['joins'];
-		$mainTableJoin = self::getJoinFor($db, $table, $options, $options['alias'] ?? $table);
+		$mainTableJoin = self::getJoinFor($db, $table, $options['lang'], $options['alias'] ?? $table, $options['fields'] ?? null);
 		if ($mainTableJoin) {
 			$alreadyExisting = $table === $mainTableJoin['table'];
 			foreach ($originalJoins as $origJoin) {
@@ -133,7 +133,7 @@ class DbProvider extends AbstractDbProvider
 		}
 
 		foreach ($originalJoins as $join) {
-			$langJoin = self::getJoinFor($db, $join['table'], $options, $join['alias'] ?? $join['table']);
+			$langJoin = self::getJoinFor($db, $join['table'], $options['lang'], $join['alias'] ?? $join['table'], $join['fields'] ?? null);
 			if ($langJoin) {
 				$alreadyExisting = $table === $langJoin['table'];
 				foreach ($originalJoins as $origJoin) {
@@ -148,7 +148,7 @@ class DbProvider extends AbstractDbProvider
 		return [$where, $options];
 	}
 
-	private static function getJoinFor(DbConnection $db, string $table, array $options, string $alias): ?array
+	private static function getJoinFor(DbConnection $db, string $table, string $lang, string $alias, ?array $fields = null): ?array
 	{
 		$mlTables = Ml::getTables($db);
 
@@ -166,13 +166,26 @@ class DbProvider extends AbstractDbProvider
 					$mlFields[] = $f;
 			}
 
+			if ($fields !== null) {
+				$newMlFields = [];
+				foreach ($fields as $f => $a) {
+					$f = is_numeric($f) ? $a : $f;
+					if (in_array($f, $mlFields))
+						$newMlFields[$f] = $a;
+				}
+				$mlFields = array_values($newMlFields);
+			}
+
+			if (!$mlFields)
+				return null;
+
 			return [
 				'type' => 'LEFT',
 				'table' => $mlTableName,
 				'alias' => $alias . '_lang',
 				'on' => [
 					$tableModel->primary[0] => $mlTableConfig['parent_field'],
-					$db->parseColumn($mlTableConfig['lang_field'], $alias . '_lang') . ' LIKE ' . $db->parseValue($options['lang']),
+					$db->parseColumn($mlTableConfig['lang_field'], $alias . '_lang') . ' LIKE ' . $db->parseValue($lang),
 				],
 				'fields' => $mlFields,
 				'injected' => true,
