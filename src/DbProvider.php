@@ -121,7 +121,7 @@ class DbProvider extends AbstractDbProvider
 		$options['joins'] = $db->getBuilder()->normalizeJoins($options['alias'] ?? $table, $options['joins'] ?? []);
 
 		$originalJoins = $options['joins'];
-		$mainTableJoin = self::getJoinFor($db, $table, $options['lang'], $options['alias'] ?? $table, $options['fields'] ?? null);
+		$mainTableJoin = self::getJoinFor($db, $table, $options['lang'], $options['alias'] ?? $table, $where, $options['fields'] ?? null);
 		if ($mainTableJoin) {
 			$alreadyExisting = $table === $mainTableJoin['table'];
 			foreach ($originalJoins as $origJoin) {
@@ -133,7 +133,7 @@ class DbProvider extends AbstractDbProvider
 		}
 
 		foreach ($originalJoins as $join) {
-			$langJoin = self::getJoinFor($db, $join['table'], $options['lang'], $join['alias'] ?? $join['table'], $join['fields'] ?? null);
+			$langJoin = self::getJoinFor($db, $join['table'], $options['lang'], $join['alias'] ?? $join['table'], $where, $join['fields'] ?? null);
 			if ($langJoin) {
 				$alreadyExisting = $table === $langJoin['table'];
 				foreach ($originalJoins as $origJoin) {
@@ -148,7 +148,7 @@ class DbProvider extends AbstractDbProvider
 		return [$where, $options];
 	}
 
-	private static function getJoinFor(DbConnection $db, string $table, string $lang, string $alias, ?array $fields = null): ?array
+	private static function getJoinFor(DbConnection $db, string $table, string $lang, string $alias, int|array $where, ?array $fields = null): ?array
 	{
 		$mlTables = Ml::getTables($db);
 
@@ -169,11 +169,21 @@ class DbProvider extends AbstractDbProvider
 			if ($fields !== null) {
 				$newMlFields = [];
 				foreach ($fields as $f => $a) {
-					$f = is_numeric($f) ? $a : $f;
-					if (in_array($f, $mlFields))
+					$realField = is_numeric($f) ? $a : $f;
+					if (in_array($realField, $mlFields))
 						$newMlFields[$f] = $a;
 				}
-				$mlFields = array_values($newMlFields);
+
+				if (is_array($where)) {
+					$involvedFields = $db->getBuilder()->getFieldsInvolvedInWhere($where);
+
+					foreach ($mlFields as $f) {
+						if (in_array($f, $involvedFields))
+							$newMlFields[] = $f;
+					}
+				}
+
+				$mlFields = $newMlFields;
 			}
 
 			if (!$mlFields)
