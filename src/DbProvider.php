@@ -147,11 +147,24 @@ class DbProvider extends AbstractDbProvider
 				}
 
 				foreach ($mlRows as $l => $mlRow) {
+					$found = false;
+					$newJoins = $query['options']['joins'] ?? [];
+					foreach ($newJoins as &$join) {
+						if ($join['table'] === $mlTableName) {
+							$join['where'][$mlTableConfig['lang_field']] = ['LIKE', $l];
+							$found = true;
+							break;
+						}
+					}
+					unset($join);
+					if (!$found)
+						throw new \Exception('Multilang join not found in multilang update building');
+
 					$new[] = [
 						'table' => $query['table'],
-						'where' => $query['where'] + [$mlTableName . '.' . $mlTableConfig['lang_field'] => $l],
+						'where' => $query['where'],
 						'data' => $mlRow,
-						'options' => $query['options'],
+						'options' => array_merge($query['options'], ['joins' => $newJoins]),
 					];
 				}
 			} else {
@@ -253,7 +266,9 @@ class DbProvider extends AbstractDbProvider
 				'alias' => $alias . '_lang',
 				'on' => [
 					$tableModel->primary[0] => $mlTableConfig['parent_field'],
-					$db->parseColumn($mlTableConfig['lang_field'], $alias . '_lang') . ' LIKE ' . $db->parseValue($lang),
+				],
+				'where' => [
+					$mlTableConfig['lang_field'] => ['LIKE', $lang],
 				],
 				'fields' => $mlFields,
 				'injected' => true,
