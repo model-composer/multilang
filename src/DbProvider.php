@@ -100,10 +100,66 @@ class DbProvider extends AbstractDbProvider
 
 	public static function alterUpdate(DbConnection $db, array $queries): array
 	{
-		foreach ($queries as &$query)
+		$mlTables = Ml::getTables($db);
+
+		$new = [];
+		foreach ($queries as &$query) {
 			[$query['where'], $query['options']] = self::alterSelect($db, $query['table'], $query['where'], $query['options']);
 
-		return $queries;
+			if (isset($mlTables[$query['table']])) {
+				$mlTableConfig = $mlTables[$query['table']];
+
+				$mlTableName = $query['table'] . $mlTableConfig['table_suffix'];
+				$mlTableModel = $db->getTable($mlTableName);
+
+				$mlFields = [];
+				foreach ($mlTableConfig['fields'] as $f) {
+					if (isset($mlTableModel->columns[$f]) and $mlTableModel->columns[$f]['real'])
+						$mlFields[] = $f;
+				}
+
+				$mainRow = [];
+				$mlRows = [];
+
+				foreach ($query['data'] as $k => $v) {
+					if (in_array($k, $mlFields)) {
+						if (is_array($v)) {
+							foreach ($v as $l => $vl) {
+								if (in_array($l, Ml::getLangs()))
+									$mlRows[$l][$k] = $vl;
+							}
+						} else {
+							foreach (Ml::getLangs() as $l)
+								$mlRows[$l][$k] = $v;
+						}
+					} else {
+						$mainRow[$k] = $v;
+					}
+				}
+
+				if (count($mainRow) > 0) {
+					$new[] = [
+						'table' => $query['table'],
+						'where' => $query['where'],
+						'data' => $mainRow,
+						'options' => $query['options'],
+					];
+				}
+
+				foreach ($mlRows as $l => $mlRow) {
+					$new[] = [
+						'table' => $query['table'],
+						'where' => $query['where'] + [$mlTableName . '.' . $mlTableConfig['lang_field'] => $l],
+						'data' => $mlRow,
+						'options' => $query['options'],
+					];
+				}
+			} else {
+				$new[] = $query;
+			}
+		}
+
+		return $new;
 	}
 
 	/**
