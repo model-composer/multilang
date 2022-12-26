@@ -1,4 +1,4 @@
-<?php namespace Model\Multilang;
+<?php namespace Model\Multilang\Providers;
 
 use Model\Config\AbstractConfigProvider;
 

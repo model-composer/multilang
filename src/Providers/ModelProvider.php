@@ -1,6 +1,7 @@
-<?php namespace Model\Multilang;
+<?php namespace Model\Multilang\Providers;
 
 use Model\Core\AbstractModelProvider;
+use Model\Multilang\Ml;
 
 class ModelProvider extends AbstractModelProvider
 {

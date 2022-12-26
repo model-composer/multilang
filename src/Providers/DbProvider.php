@@ -1,9 +1,10 @@
-<?php namespace Model\Multilang;
+<?php namespace Model\Multilang\Providers;
 
 use Model\Config\Config;
 use Model\Db\AbstractDbProvider;
 use Model\Db\DbConnection;
 use Model\DbParser\Table;
+use Model\Multilang\Ml;
 
 class DbProvider extends AbstractDbProvider
 {
@@ -353,7 +354,7 @@ class DbProvider extends AbstractDbProvider
 		if (class_exists('\\Model\\LinkedTables\\LinkedTables')) {
 			$linkedTables = \Model\LinkedTables\LinkedTables::getTables($db);
 
-			$mlTables = \Model\Multilang\Ml::getTablesConfig($db);
+			$mlTables = Ml::getTablesConfig($db);
 			foreach ($mlTables as $mlTable => $mlTableOptions) {
 				if ($mlTable . $mlTableOptions['table_suffix'] === $table and array_key_exists($mlTable, $linkedTables)) {
 					$customTableModel = $db->getParser()->getTable($linkedTables[$mlTable] . $mlTableOptions['table_suffix']);
