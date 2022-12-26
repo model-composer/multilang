@@ -180,4 +180,69 @@ class Ml
 		$tables = self::getTables($db);
 		return $tables[$table] ?? null;
 	}
+
+	/**
+	 * Given a multilang table and an id, returns all multilang rows for that row
+	 * If no id is provided, returns a list of fields set to null
+	 *
+	 * @param \Model\Db\DbConnection $db
+	 * @param string $table
+	 * @param int|null $id
+	 * @return array
+	 */
+	public static function getMultilangTexts(\Model\Db\DbConnection $db, string $table, int $id = null): array
+	{
+		$mlTables = Ml::getTables($db);
+
+		$languageVersions = [];
+		foreach (Ml::getLangs() as $l)
+			$languageVersions[$l] = [];
+
+		$tableModel = $db->getTable($table);
+		$columns = $tableModel->columns;
+
+		if (array_key_exists($table, $mlTables)) {
+			$multilangTable = $table . $mlTables[$table]['table_suffix'];
+			$multilangTableModel = $db->getTable($multilangTable);
+			$multilangColumns = [];
+			foreach ($mlTables[$table]['fields'] as $ml) {
+				$columns[$ml] = $multilangTableModel->columns[$ml];
+				$multilangColumns[] = $ml;
+			}
+
+			$langColumn = $mlTables[$table]['lang_field'];
+
+			$fieldsToExtract = $multilangColumns;
+			$fieldsToExtract[] = $langColumn;
+
+			if ($id) {
+				$languageVersionsQ = $db->selectAll($multilangTable, [
+					$mlTables[$table]['parent_field'] => $id,
+				], [
+					'fields' => $fieldsToExtract,
+					'fallback' => false,
+				]);
+				foreach ($languageVersionsQ as $r) {
+					$lang = $r[$langColumn];
+					unset($r[$langColumn]);
+					$languageVersions[$lang] = $r;
+				}
+
+				foreach ($languageVersions as &$r) {
+					foreach ($multilangColumns as $k) {
+						if (!array_key_exists($k, $r))
+							$r[$k] = null;
+					}
+				}
+				unset($r);
+			} else {
+				foreach ($languageVersions as $lang => $l_arr) {
+					foreach ($mlTables[$table]['fields'] as $f)
+						$languageVersions[$lang][$f] = null;
+				}
+			}
+		}
+
+		return $languageVersions;
+	}
 }
