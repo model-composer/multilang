@@ -28,7 +28,7 @@ class DbProvider extends AbstractDbProvider
 
 		$new = [];
 		foreach ($queries as $query) {
-			if (isset($mlTables[$query['table']])) {
+			if (isset($mlTables[$query['table']]) and ($query['options']['auto_ml'] ?? true)) {
 				$mlTableConfig = $mlTables[$query['table']];
 
 				$mlTableName = $query['table'] . $mlTableConfig['table_suffix'];
@@ -105,6 +105,11 @@ class DbProvider extends AbstractDbProvider
 
 		$new = [];
 		foreach ($queries as &$query) {
+			if (!($query['options']['auto_ml'] ?? true)) {
+				$new[] = $query;
+				continue;
+			}
+
 			[$query['where'], $query['options']] = self::alterSelect($db, $query['table'], $query['where'], $query['options']);
 
 			if (isset($mlTables[$query['table']])) {
@@ -187,6 +192,9 @@ class DbProvider extends AbstractDbProvider
 	 */
 	public static function alterSelect(DbConnection $db, string $table, array|int $where, array $options): array
 	{
+		if (!($options['auto_ml'] ?? true))
+			return [$where, $options];
+
 		if (!isset($options['lang']))
 			$options['lang'] = Ml::getLang();
 
@@ -288,6 +296,9 @@ class DbProvider extends AbstractDbProvider
 	 */
 	public static function alterSelectResult(DbConnection $db, string $table, array $row, array $options): array
 	{
+		if (!($options['auto_ml'] ?? true))
+			return $row;
+
 		$config = Config::get('multilang');
 		$mlTables = Ml::getTables($db);
 
