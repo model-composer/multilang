@@ -36,7 +36,7 @@ class DbProvider extends AbstractDbProvider
 
 				$mlFields = [];
 				foreach ($mlTableConfig['fields'] as $f) {
-					if (isset($mlTableModel->columns[$f]) and $mlTableModel->columns[$f]['real'])
+					if (isset($mlTableModel->columns[$f]))
 						$mlFields[] = $f;
 				}
 
@@ -115,7 +115,7 @@ class DbProvider extends AbstractDbProvider
 
 				$mlFields = [];
 				foreach ($mlTableConfig['fields'] as $f) {
-					if (isset($mlTableModel->columns[$f]) and $mlTableModel->columns[$f]['real'])
+					if (isset($mlTableModel->columns[$f]))
 						$mlFields[] = $f;
 				}
 
