@@ -367,7 +367,7 @@ class DbProvider extends AbstractDbProvider
 
 			$mlTables = Ml::getTablesConfig($db);
 			foreach ($mlTables as $mlTable => $mlTableOptions) {
-				if ($mlTable . $mlTableOptions['table_suffix'] === $table and array_key_exists($mlTable, $linkedTables)) {
+				if ($mlTable . $mlTableOptions['table_suffix'] === $table and array_key_exists($mlTable, $linkedTables) and $db->getParser()->tableExists($linkedTables[$mlTable] . $mlTableOptions['table_suffix'])) {
 					$customTableModel = $db->getParser()->getTable($linkedTables[$mlTable] . $mlTableOptions['table_suffix']);
 					$tableModel->loadColumns($customTableModel->columns, false);
 					break;
