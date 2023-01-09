@@ -167,7 +167,7 @@ class Dictionary
 			$cache = Cache::getCacheAdapter();
 
 			self::$dictionary = $cache->get('model.multilang.dictionary', function (\Symfony\Contracts\Cache\ItemInterface $item) {
-				Cache::registerInvalidation('keys', ['model.multilang.dictionary']);
+				$item->expiresAfter(3600 * 24);
 				return self::retrieveFull();
 			});
 		}
