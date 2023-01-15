@@ -205,7 +205,7 @@ class DbProvider extends AbstractDbProvider
 		if ($mainTableJoin) {
 			$alreadyExisting = $table === $mainTableJoin['table'];
 			foreach ($originalJoins as $origJoin) {
-				if ($origJoin['table'] === $mainTableJoin['table'] and json_encode($origJoin['on']) === json_encode($mainTableJoin['on']) and json_encode($origJoin['where']) === json_encode($mainTableJoin['where']))
+				if ($origJoin['table'] === $mainTableJoin['table'] and json_encode($origJoin['on'] ?? null) === json_encode($mainTableJoin['on']) and json_encode($origJoin['where'] ?? []) === json_encode($mainTableJoin['where']))
 					$alreadyExisting = true;
 			}
 			if (!$alreadyExisting)
@@ -217,7 +217,7 @@ class DbProvider extends AbstractDbProvider
 			if ($langJoin) {
 				$alreadyExisting = $table === $langJoin['table'];
 				foreach ($originalJoins as $origJoin) {
-					if ($origJoin['table'] === $langJoin['table'] and json_encode($origJoin['on']) === json_encode($langJoin['on']) and json_encode($origJoin['where']) === json_encode($langJoin['where']))
+					if ($origJoin['table'] === $langJoin['table'] and json_encode($origJoin['on'] ?? null) === json_encode($langJoin['on']) and json_encode($origJoin['where'] ?? []) === json_encode($langJoin['where']))
 						$alreadyExisting = true;
 				}
 				if (!$alreadyExisting)
