@@ -25,7 +25,7 @@ class Ml
 	public static function getLang(): string
 	{
 		if (!isset(self::$lang))
-			self::setDefaultLang();
+			self::$lang = self::getDefaultLang();
 
 		return self::$lang;
 	}
@@ -42,15 +42,13 @@ class Ml
 	}
 
 	/**
-	 * @return void
+	 * @return string
 	 */
-	private static function setDefaultLang(): void
+	public static function getDefaultLang(): string
 	{
 		$config = Config::get('multilang');
-		if ($config['default']) {
-			self::setLang($config['default']);
-			return;
-		}
+		if ($config['default'])
+			return $config['default'];
 
 		$browserLang = null;
 		if (isset($_SERVER, $_SERVER['HTTP_ACCEPT_LANGUAGE']))
@@ -58,9 +56,9 @@ class Ml
 
 		$langs = self::getLangs();
 		if ($browserLang and in_array($browserLang, $langs))
-			self::setLang($browserLang);
+			return $browserLang;
 		else
-			self::setLang($langs[0]);
+			return $langs[0];
 	}
 
 	/**
