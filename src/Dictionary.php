@@ -114,6 +114,9 @@ class Dictionary
 		}
 
 		self::flushCache();
+
+		if (class_exists('\\Model\\Events\\Events'))
+			\Model\Events\Events::dispatch(new \Model\Multilang\Events\ChangedDictionary('set', $section, $word, $values));
 	}
 
 	/**
@@ -143,6 +146,9 @@ class Dictionary
 		}
 
 		self::flushCache();
+
+		if (class_exists('\\Model\\Events\\Events'))
+			\Model\Events\Events::dispatch(new \Model\Multilang\Events\ChangedDictionary('delete', $section, $word));
 	}
 
 	/**
