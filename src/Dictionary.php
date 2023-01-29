@@ -2,7 +2,6 @@
 
 use Model\Cache\Cache;
 use Model\Config\Config;
-use Model\Db\Db;
 
 class Dictionary
 {
@@ -79,7 +78,7 @@ class Dictionary
 
 		switch ($config['dictionary_storage']) {
 			case 'db':
-				$db = Db::getConnection();
+				$db = \Model\Db\Db::getConnection();
 				$checkSection = $db->select('model_dictionary_sections', ['name' => $section]);
 				if (!$checkSection) {
 					$db->insert('model_dictionary_sections', [
@@ -130,7 +129,7 @@ class Dictionary
 
 		switch ($config['dictionary_storage']) {
 			case 'db':
-				$db = Db::getConnection();
+				$db = \Model\Db\Db::getConnection();
 				$db->delete('model_dictionary', ['section' => $section, 'word' => $word]);
 				break;
 
@@ -204,7 +203,7 @@ class Dictionary
 	 */
 	private static function retrieveFromDb(array $config): array
 	{
-		$db = Db::getConnection();
+		$db = \Model\Db\Db::getConnection();
 
 		$dictionary = [];
 		foreach ($db->selectAll('model_dictionary_sections') as $section) {
