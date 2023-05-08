@@ -48,6 +48,13 @@ class ConfigProvider extends AbstractConfigProvider
 					return $config;
 				},
 			],
+			[
+				'version' => '0.3.12',
+				'migration' => function (array $config, string $env) {
+					$config['cache_dictionary'] = 'model.multilang.dictionary';
+					return $config;
+				},
+			],
 		];
 	}
 }

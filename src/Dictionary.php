@@ -169,12 +169,18 @@ class Dictionary
 	public static function getFull(): array
 	{
 		if (self::$dictionary === null) {
-			$cache = Cache::getCacheAdapter();
+			$config = Config::get('multilang');
 
-			self::$dictionary = $cache->get('model.multilang.dictionary', function (\Symfony\Contracts\Cache\ItemInterface $item) {
-				$item->expiresAfter(3600 * 24);
-				return self::retrieveFull();
-			});
+			if ($config['cache_dictionary']) {
+				$cache = Cache::getCacheAdapter();
+
+				self::$dictionary = $cache->get($config['cache_dictionary'], function (\Symfony\Contracts\Cache\ItemInterface $item) {
+					$item->expiresAfter(3600 * 24);
+					return self::retrieveFull();
+				});
+			} else {
+				self::$dictionary = self::retrieveFull();
+			}
 		}
 
 		return self::$dictionary;
