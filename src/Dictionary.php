@@ -188,10 +188,10 @@ class Dictionary
 	 * @return array
 	 * @throws \Exception
 	 */
-	public static function getFull(): array
+	public static function getFull(bool $useCache = true): array
 	{
 		if (self::$dictionary === null) {
-			$cacheKey = self::getCacheKey();
+			$cacheKey = $useCache ? self::getCacheKey() : null;
 
 			if ($cacheKey) {
 				$cache = Cache::getCacheAdapter();
