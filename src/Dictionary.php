@@ -158,7 +158,7 @@ class Dictionary
 		$cacheKey = self::getCacheKey();
 		if ($cacheKey) {
 			$cache = Cache::getCacheAdapter();
-			$cache->deleteItem('model.multilang.dictionary');
+			$cache->deleteItem($cacheKey);
 		}
 		self::$dictionary = null;
 	}
