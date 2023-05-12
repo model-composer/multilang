@@ -174,6 +174,11 @@ class Dictionary
 			if ($config['cache_dictionary']) {
 				$cache = Cache::getCacheAdapter();
 
+				if ($config['dictionary_storage'] === 'db') {
+					$db = \Model\Db\Db::getConnection();
+					$config['cache_dictionary'] .= '.' . $db->getName();
+				}
+
 				self::$dictionary = $cache->get($config['cache_dictionary'], function (\Symfony\Contracts\Cache\ItemInterface $item) {
 					$item->expiresAfter(3600 * 24);
 					return self::retrieveFull();
