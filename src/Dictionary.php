@@ -155,9 +155,31 @@ class Dictionary
 	 */
 	public static function flushCache(): void
 	{
-		$cache = Cache::getCacheAdapter();
-		$cache->deleteItem('model.multilang.dictionary');
+		$cacheKey = self::getCacheKey();
+		if ($cacheKey) {
+			$cache = Cache::getCacheAdapter();
+			$cache->deleteItem('model.multilang.dictionary');
+		}
 		self::$dictionary = null;
+	}
+
+	/**
+	 * @return string|null
+	 */
+	private static function getCacheKey(): ?string
+	{
+		$config = Config::get('multilang');
+
+		if ($config['cache_dictionary']) {
+			if ($config['dictionary_storage'] === 'db') {
+				$db = \Model\Db\Db::getConnection();
+				$config['cache_dictionary'] .= '.' . $db->getName();
+			}
+
+			return $config['cache_dictionary'];
+		}
+
+		return null;
 	}
 
 	/**
@@ -169,17 +191,12 @@ class Dictionary
 	public static function getFull(): array
 	{
 		if (self::$dictionary === null) {
-			$config = Config::get('multilang');
+			$cacheKey = self::getCacheKey();
 
-			if ($config['cache_dictionary']) {
+			if ($cacheKey) {
 				$cache = Cache::getCacheAdapter();
 
-				if ($config['dictionary_storage'] === 'db') {
-					$db = \Model\Db\Db::getConnection();
-					$config['cache_dictionary'] .= '.' . $db->getName();
-				}
-
-				self::$dictionary = $cache->get($config['cache_dictionary'], function (\Symfony\Contracts\Cache\ItemInterface $item) {
+				self::$dictionary = $cache->get($cacheKey, function (\Symfony\Contracts\Cache\ItemInterface $item) {
 					$item->expiresAfter(3600 * 24);
 					return self::retrieveFull();
 				});
