@@ -190,8 +190,11 @@ class Dictionary
 	 */
 	public static function getFull(bool $useCache = true): array
 	{
+		if (!$useCache)
+			return self::retrieveFull();
+
 		if (self::$dictionary === null) {
-			$cacheKey = $useCache ? self::getCacheKey() : null;
+			$cacheKey = self::getCacheKey();
 
 			if ($cacheKey) {
 				$cache = Cache::getCacheAdapter();
