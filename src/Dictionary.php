@@ -306,7 +306,7 @@ class Dictionary
 	 */
 	public static function isUserAuthorized(string $section): bool
 	{
-		$dictionary = self::getFull();
+		$dictionary = self::getFull(false);
 
 		if (!isset($dictionary[$section]))
 			return false;
