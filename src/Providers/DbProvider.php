@@ -52,14 +52,15 @@ class DbProvider extends AbstractDbProvider
 
 					foreach ($row as $k => $v) {
 						if (in_array($k, $mlFields)) {
-							if (is_array($v)) {
-								foreach ($v as $l => $vl) {
-									if (in_array($l, Ml::getLangs()))
-										$mlRows[$l][$k] = $vl;
-								}
-							} else {
-								foreach (Ml::getLangs() as $l)
+							foreach (Ml::getLangs() as $l) {
+								if (is_array($v)) {
+									if (isset($v[$l]))
+										$mlRows[$l][$k] = $v[$l];
+									else
+										$mlRows[$l][$k] = $mlTableModel->columns[$k]['null'] ? null : '';
+								} else {
 									$mlRows[$l][$k] = $v;
+								}
 							}
 						} else {
 							$mainRow[$k] = $v;
