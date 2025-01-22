@@ -187,7 +187,7 @@ class Ml
 	 * @param int|null $id
 	 * @return array
 	 */
-	public static function getMultilangTexts(\Model\Db\DbConnection $db, string $table, int $id = null): array
+	public static function getMultilangTexts(\Model\Db\DbConnection $db, string $table, ?int $id = null): array
 	{
 		$mlTables = Ml::getTables($db);
 
