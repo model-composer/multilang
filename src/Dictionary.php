@@ -2,6 +2,7 @@
 
 use Model\Cache\Cache;
 use Model\Config\Config;
+use Model\Db\DbConnection;
 
 class Dictionary
 {
@@ -70,32 +71,30 @@ class Dictionary
 	 * @param string $word
 	 * @param array $values
 	 * @param string $acl
-	 * @param bool $all_dbs
 	 * @return void
 	 */
-	public static function set(string $section, string $word, array $values, string $acl = 'user', bool $all_dbs = false): void
+	public static function set(string $section, string $word, array $values, string $acl = 'user', ?DbConnection $db = null): void
 	{
 		$config = Config::get('multilang');
 
 		switch ($config['dictionary_storage']) {
 			case 'db':
-				$dbs = $all_dbs ? \Model\Db\Db::getConnections() : [\Model\Db\Db::getConnection()];
-				foreach ($dbs as $db) {
-					$checkSection = $db->select('model_dictionary_sections', ['name' => $section]);
-					if (!$checkSection) {
-						$db->insert('model_dictionary_sections', [
-							'name' => $section,
-							'acl' => $acl,
-						]);
-					}
+				$db ??= \Model\Db\Db::getConnection();
 
-					foreach ($values as $lang => $value) {
-						$checkWord = $db->select('model_dictionary', ['section' => $section, 'word' => $word, 'lang' => $lang]);
-						if ($checkWord)
-							$db->update('model_dictionary', $checkWord['id'], ['value' => $value]);
-						else
-							$db->insert('model_dictionary', ['section' => $section, 'word' => $word, 'lang' => $lang, 'value' => $value]);
-					}
+				$checkSection = $db->select('model_dictionary_sections', ['name' => $section]);
+				if (!$checkSection) {
+					$db->insert('model_dictionary_sections', [
+						'name' => $section,
+						'acl' => $acl,
+					]);
+				}
+
+				foreach ($values as $lang => $value) {
+					$checkWord = $db->select('model_dictionary', ['section' => $section, 'word' => $word, 'lang' => $lang]);
+					if ($checkWord)
+						$db->update('model_dictionary', $checkWord['id'], ['value' => $value]);
+					else
+						$db->insert('model_dictionary', ['section' => $section, 'word' => $word, 'lang' => $lang, 'value' => $value]);
 				}
 				break;
 
@@ -167,15 +166,18 @@ class Dictionary
 	}
 
 	/**
+	 * Get cache key for dictionary
+	 *
+	 * @param array $options
 	 * @return string|null
 	 */
-	private static function getCacheKey(): ?string
+	private static function getCacheKey(array $options = []): ?string
 	{
 		$config = Config::get('multilang');
 
 		if ($config['cache_dictionary']) {
 			if ($config['dictionary_storage'] === 'db') {
-				$db = \Model\Db\Db::getConnection();
+				$db = $options['db'] ?? \Model\Db\Db::getConnection();
 				$config['cache_dictionary'] .= '.' . $db->getName();
 			}
 
@@ -188,26 +190,27 @@ class Dictionary
 	/**
 	 * Get full dictionary from cache
 	 *
+	 * @param array $options
 	 * @return array
 	 * @throws \Exception
 	 */
-	public static function getFull(bool $useCache = true): array
+	public static function getFull(array $options = []): array
 	{
-		if (!$useCache)
-			return self::retrieveFull();
+		if (!($options['use_cache'] ?? true))
+			return self::retrieveFull($options);
 
 		if (self::$dictionary === null) {
-			$cacheKey = self::getCacheKey();
+			$cacheKey = self::getCacheKey($options);
 
 			if ($cacheKey) {
 				$cache = Cache::getCacheAdapter();
 
-				self::$dictionary = $cache->get($cacheKey, function (\Symfony\Contracts\Cache\ItemInterface $item) {
+				self::$dictionary = $cache->get($cacheKey, function (\Symfony\Contracts\Cache\ItemInterface $item) use ($options) {
 					$item->expiresAfter(3600 * 24);
-					return self::retrieveFull();
+					return self::retrieveFull($options);
 				});
 			} else {
-				self::$dictionary = self::retrieveFull();
+				self::$dictionary = self::retrieveFull($options);
 			}
 		}
 
@@ -217,27 +220,29 @@ class Dictionary
 	/**
 	 * Builds full dictionary
 	 *
+	 * @param array $options
 	 * @return array
 	 * @throws \Exception
 	 */
-	private static function retrieveFull(): array
+	private static function retrieveFull(array $options = []): array
 	{
 		$config = Config::get('multilang');
 
 		return match ($config['dictionary_storage']) {
-			'db' => self::retrieveFromDb($config),
-			'file' => self::retrieveFromFile($config),
+			'db' => self::retrieveFromDb($config, $options),
+			'file' => self::retrieveFromFile($config, $options),
 			default => throw new \Exception('Unknown dictionary storage type'),
 		};
 	}
 
 	/**
 	 * @param array $config
+	 * @param array $options
 	 * @return array
 	 */
-	private static function retrieveFromDb(array $config): array
+	private static function retrieveFromDb(array $config, array $options = []): array
 	{
-		$db = \Model\Db\Db::getConnection();
+		$db = $options['db'] ?? \Model\Db\Db::getConnection();
 
 		$dictionary = [];
 		foreach ($db->selectAll('model_dictionary_sections') as $section) {
@@ -256,7 +261,7 @@ class Dictionary
 
 		// If we recently switched from file to db storage, we have to populate the db
 		if (empty($dictionary) and file_exists(self::getDictionaryFilePath($config))) {
-			$dictionary_file = self::retrieveFromFile($config);
+			$dictionary_file = self::retrieveFromFile($config, $options);
 
 			foreach ($dictionary_file as $sectionName => $section) {
 				$db->insert('model_dictionary_sections', [
@@ -277,7 +282,7 @@ class Dictionary
 			}
 
 			unlink(self::getDictionaryFilePath($config));
-			return self::retrieveFromDb($config);
+			return self::retrieveFromDb($config, $options);
 		}
 
 		return $dictionary;
@@ -285,9 +290,10 @@ class Dictionary
 
 	/**
 	 * @param array $config
+	 * @param array $options
 	 * @return array
 	 */
-	private static function retrieveFromFile(array $config): array
+	private static function retrieveFromFile(array $config, array $options = []): array
 	{
 		$filepath = self::getDictionaryFilePath($config);
 		return require $filepath;

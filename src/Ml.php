@@ -2,6 +2,8 @@
 
 use Model\Cache\Cache;
 use Model\Config\Config;
+use Model\Db\Db;
+use Model\Db\DbConnection;
 use Model\ProvidersFinder\Providers;
 
 class Ml
@@ -76,7 +78,19 @@ class Ml
 			}
 		}
 
-		$dictionary = Dictionary::getFull();
+		$config = Config::get('multilang');
+		if ($config['dictionary_storage'] === 'db') {
+			$dbs = Db::getConnections(true);
+			foreach ($dbs as $db)
+				self::realignDictionary($db);
+		} else {
+			self::realignDictionary();
+		}
+	}
+
+	private static function realignDictionary(?DbConnection $db = null): void
+	{
+		$dictionary = Dictionary::getFull(['db' => $db]);
 
 		$packagesWithProvider = Providers::find('MultilangProvider');
 		foreach ($packagesWithProvider as $package) {
@@ -84,7 +98,7 @@ class Ml
 			foreach ($packageDictionary as $sectionName => $section) {
 				foreach ($section['words'] as $word => $values) {
 					if (!isset($dictionary[$sectionName]['words'][$word]))
-						Dictionary::set($sectionName, $word, $values, $section['accessLevel'], true);
+						Dictionary::set($sectionName, $word, $values, $section['accessLevel'], $db);
 				}
 			}
 		}
