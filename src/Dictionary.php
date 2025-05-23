@@ -70,29 +70,32 @@ class Dictionary
 	 * @param string $word
 	 * @param array $values
 	 * @param string $acl
+	 * @param bool $all_dbs
 	 * @return void
 	 */
-	public static function set(string $section, string $word, array $values, string $acl = 'user'): void
+	public static function set(string $section, string $word, array $values, string $acl = 'user', bool $all_dbs = false): void
 	{
 		$config = Config::get('multilang');
 
 		switch ($config['dictionary_storage']) {
 			case 'db':
-				$db = \Model\Db\Db::getConnection();
-				$checkSection = $db->select('model_dictionary_sections', ['name' => $section]);
-				if (!$checkSection) {
-					$db->insert('model_dictionary_sections', [
-						'name' => $section,
-						'acl' => $acl,
-					]);
-				}
+				$dbs = $all_dbs ? \Model\Db\Db::getConnections() : [\Model\Db\Db::getConnection()];
+				foreach ($dbs as $db) {
+					$checkSection = $db->select('model_dictionary_sections', ['name' => $section]);
+					if (!$checkSection) {
+						$db->insert('model_dictionary_sections', [
+							'name' => $section,
+							'acl' => $acl,
+						]);
+					}
 
-				foreach ($values as $lang => $value) {
-					$checkWord = $db->select('model_dictionary', ['section' => $section, 'word' => $word, 'lang' => $lang]);
-					if ($checkWord)
-						$db->update('model_dictionary', $checkWord['id'], ['value' => $value]);
-					else
-						$db->insert('model_dictionary', ['section' => $section, 'word' => $word, 'lang' => $lang, 'value' => $value]);
+					foreach ($values as $lang => $value) {
+						$checkWord = $db->select('model_dictionary', ['section' => $section, 'word' => $word, 'lang' => $lang]);
+						if ($checkWord)
+							$db->update('model_dictionary', $checkWord['id'], ['value' => $value]);
+						else
+							$db->insert('model_dictionary', ['section' => $section, 'word' => $word, 'lang' => $lang, 'value' => $value]);
+					}
 				}
 				break;
 

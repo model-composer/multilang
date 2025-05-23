@@ -84,7 +84,7 @@ class Ml
 			foreach ($packageDictionary as $sectionName => $section) {
 				foreach ($section['words'] as $word => $values) {
 					if (!isset($dictionary[$sectionName]['words'][$word]))
-						Dictionary::set($sectionName, $word, $values, $section['accessLevel']);
+						Dictionary::set($sectionName, $word, $values, $section['accessLevel'], true);
 				}
 			}
 		}
