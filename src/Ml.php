@@ -78,13 +78,30 @@ class Ml
 			}
 		}
 
+		$dbs = Db::getConnections(true);
+		foreach ($dbs as $db)
+			self::realignMultilangTables($db);
+
 		$config = Config::get('multilang');
 		if ($config['dictionary_storage'] === 'db') {
-			$dbs = Db::getConnections(true);
 			foreach ($dbs as $db)
 				self::realignDictionary($db);
 		} else {
 			self::realignDictionary();
+		}
+	}
+
+	private static function realignMultilangTables(DbConnection $db): void
+	{
+		$tables = self::getTables($db);
+
+
+		foreach (Ml::getLangs() as $l) {
+			foreach ($tables as $table => $tableData) {
+				$db->query('INSERT INTO `' . $table . $tableData['table_suffix'] . '` (`parent`, `lang`)
+					SELECT t.`id`, \'' . $l . '\'
+					FROM `' . $table . '` t LEFT JOIN `' . $table . $tableData['table_suffix'] . '` l ON t.`id` = l.`parent` AND l.`lang` = \'' . $l . '\' WHERE l.`id` IS NULL');
+			}
 		}
 	}
 
