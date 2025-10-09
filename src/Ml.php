@@ -95,11 +95,17 @@ class Ml
 	{
 		$tables = self::getTables($db);
 
+		foreach ($tables as $table => $tableData) {
+			$qryFields = [];
+			$qryData = [];
+			foreach ($tableData['fields'] as $field) {
+				$qryFields[] = '`' . $field . '`';
+				$qryData[] = '\'\'';
+			}
 
-		foreach (Ml::getLangs() as $l) {
-			foreach ($tables as $table => $tableData) {
-				$db->query('INSERT INTO `' . $table . $tableData['table_suffix'] . '` (`parent`, `lang`)
-					SELECT t.`id`, \'' . $l . '\'
+			foreach (Ml::getLangs() as $l) {
+				$db->query('INSERT INTO `' . $table . $tableData['table_suffix'] . '` (`parent`, `lang`' . ($qryFields ? ',' . implode(',', $qryFields) : '') . ')
+					SELECT t.`id`, \'' . $l . '\'' . ($qryData ? ',' . implode(',', $qryData) : '') . '
 					FROM `' . $table . '` t LEFT JOIN `' . $table . $tableData['table_suffix'] . '` l ON t.`id` = l.`parent` AND l.`lang` = \'' . $l . '\' WHERE l.`id` IS NULL');
 			}
 		}
