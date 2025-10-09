@@ -95,18 +95,53 @@ class Ml
 	{
 		$tables = self::getTables($db);
 
+		$linked_tables = [];
+		if (class_exists('\\Model\\LinkedTables\\LinkedTables'))
+			$linked_tables = \Model\LinkedTables\LinkedTables::getTables($db);
+
 		foreach ($tables as $table => $tableData) {
+			$custom_fields = [];
+			if (isset($linked_tables[$table])) {
+				try {
+					$custom_table_texts = $db->getTable($linked_tables[$table] . '_texts');
+					foreach ($custom_table_texts->columns as $k => $col_data) {
+						if ($k !== 'id' and !in_array($k, $custom_fields))
+							$custom_fields[] = $k;
+					}
+				} catch (\Exception $e) {
+				}
+			}
+
 			$qryFields = [];
 			$qryData = [];
 			foreach ($tableData['fields'] as $field) {
+				if (in_array($field, $custom_fields))
+					continue;
 				$qryFields[] = '`' . $field . '`';
 				$qryData[] = '\'\'';
 			}
 
 			foreach (Ml::getLangs() as $l) {
-				$db->query('INSERT INTO `' . $table . $tableData['table_suffix'] . '` (`parent`, `lang`' . ($qryFields ? ',' . implode(',', $qryFields) : '') . ')
+				$qry = 'INSERT INTO `' . $table . $tableData['table_suffix'] . '` (`parent`, `lang`' . ($qryFields ? ',' . implode(',', $qryFields) : '') . ')
 					SELECT t.`id`, \'' . $l . '\'' . ($qryData ? ',' . implode(',', $qryData) : '') . '
-					FROM `' . $table . '` t LEFT JOIN `' . $table . $tableData['table_suffix'] . '` l ON t.`id` = l.`parent` AND l.`lang` = \'' . $l . '\' WHERE l.`id` IS NULL');
+					FROM `' . $table . '` t LEFT JOIN `' . $table . $tableData['table_suffix'] . '` l ON t.`id` = l.`parent` AND l.`lang` = \'' . $l . '\' WHERE l.`id` IS NULL';
+				$db->query($qry);
+			}
+
+			if (isset($linked_tables[$table]) and count($custom_fields) > 0) {
+				$qryFields = [];
+				$qryData = [];
+				foreach ($custom_fields as $field) {
+					$qryFields[] = '`' . $field . '`';
+					$qryData[] = '\'\'';
+				}
+
+				$qry = 'INSERT INTO `' . $linked_tables[$table] . $tableData['table_suffix'] . '` (' . implode(',', $qryFields) . ')
+					SELECT ' . implode(',', $qryData) . '
+					FROM `' . $table . $tableData['table_suffix'] . '` l
+						LEFT JOIN `' . $linked_tables[$table] . $tableData['table_suffix'] . '` c ON c.`id` = l.`id`
+						WHERE l.`lang` = \'' . $l . '\' AND c.`id` IS NULL';
+				$db->query($qry);
 			}
 		}
 	}
