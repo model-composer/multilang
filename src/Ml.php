@@ -5,11 +5,14 @@ use Model\Config\Config;
 use Model\Db\Db;
 use Model\Db\DbConnection;
 use Model\ProvidersFinder\Providers;
+use Model\Session\Session;
+use Model\Session\SessionInterface;
 
 class Ml
 {
 	private static string $lang;
 	private static array $tablesCache = [];
+	private static SessionInterface $session;
 
 	/**
 	 * @return array
@@ -26,8 +29,24 @@ class Ml
 	 */
 	public static function getLang(): string
 	{
-		if (!isset(self::$lang))
+		if (!isset(self::$lang)) {
 			self::$lang = self::getDefaultLang();
+
+			$config = Config::get('multilang');
+			if ($config['type'] === 'session') {
+				if (!isset(self::$session))
+					self::$session = new Session();
+
+				if (isset($_GET['lang']) and in_array($_GET['lang'], Ml::getLangs()))
+					self::$session->set('model_lang', $_GET['lang']);
+
+				if (self::$session->get('model_lang')) {
+					$lang = self::$session->get('model_lang');
+					if (in_array($lang, Ml::getLangs()))
+						self::$lang = $lang;
+				}
+			}
+		}
 
 		return self::$lang;
 	}
@@ -41,6 +60,14 @@ class Ml
 			throw new \Exception('Unsupported lang');
 
 		self::$lang = $lang;
+	}
+
+	/**
+	 * @param SessionInterface $session
+	 */
+	public static function setSession(SessionInterface $session): void
+	{
+		self::$session = $session;
 	}
 
 	/**
