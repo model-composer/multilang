@@ -111,7 +111,10 @@ class DbProvider extends AbstractDbProvider
 				continue;
 			}
 
-			[$query['where'], $query['options']] = self::alterSelect($db, $query['table'], $query['where'], $query['options']);
+			[$query['where'], $query['options']] = self::alterSelect($db, $query['table'], $query['where'], [
+				...$query['options'],
+				'data' => $query['data'],
+			]);
 
 			if (isset($mlTables[$query['table']])) {
 				$mlTableConfig = $mlTables[$query['table']];
@@ -202,7 +205,7 @@ class DbProvider extends AbstractDbProvider
 		$options['joins'] = $db->getBuilder()->normalizeJoins($options['alias'] ?? $table, $options['joins'] ?? []);
 
 		$originalJoins = $options['joins'];
-		$mainTableJoin = self::getJoinFor($db, $table, $options['lang'], $options['alias'] ?? $table, $where, $options['fields'] ?? null);
+		$mainTableJoin = self::getJoinFor($db, $table, $options['lang'], $options['alias'] ?? $table, $where, $options['fields'] ?? null, $options['data'] ?? null);
 		if ($mainTableJoin) {
 			$alreadyExisting = $table === $mainTableJoin['table'];
 			foreach ($originalJoins as $origJoin) {
@@ -229,7 +232,7 @@ class DbProvider extends AbstractDbProvider
 		return [$where, $options];
 	}
 
-	private static function getJoinFor(DbConnection $db, string $table, string $lang, string $alias, int|array $where, ?array $fields = null): ?array
+	private static function getJoinFor(DbConnection $db, string $table, string $lang, string $alias, int|array $where, ?array $fields = null, ?array $data = null): ?array
 	{
 		$mlTables = Ml::getTables($db);
 
@@ -243,7 +246,7 @@ class DbProvider extends AbstractDbProvider
 
 			$mlFields = [];
 			foreach ($mlTableConfig['fields'] as $f) {
-				if (isset($mlTableModel->columns[$f]) and $mlTableModel->columns[$f]['real'])
+				if ((isset($mlTableModel->columns[$f]) and $mlTableModel->columns[$f]['real']) or ($data and array_key_exists($f, $data)))
 					$mlFields[] = $f;
 			}
 
