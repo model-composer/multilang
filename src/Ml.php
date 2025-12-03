@@ -76,7 +76,7 @@ class Ml
 	public static function getDefaultLang(): string
 	{
 		$config = Config::get('multilang');
-		if ($config['default'])
+		if ($config['default'] and $config['force_default'])
 			return $config['default'];
 
 		$browserLang = null;
