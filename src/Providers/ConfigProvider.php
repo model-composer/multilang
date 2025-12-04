@@ -58,7 +58,7 @@ class ConfigProvider extends AbstractConfigProvider
 			[
 				'version' => '0.4.8',
 				'migration' => function (array $config, string $env) {
-					$config['force_default'] = true;
+					$config['force_default'] = false;
 					return $config;
 				},
 			],
