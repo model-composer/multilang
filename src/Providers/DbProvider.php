@@ -366,10 +366,25 @@ class DbProvider extends AbstractDbProvider
 	 */
 	public static function alterTableModel(DbConnection $db, string $table, Table $tableModel): Table
 	{
+		$mlTables = Ml::getTablesConfig($db);
+
+		foreach ($mlTables as $mlTable => $mlTableOptions) {
+			if ($mlTable === $table . $mlTableOptions['table_suffix'] and $db->getParser()->tableExists($mlTable)) {
+				$customTableModel = $db->getParser()->getTable($mlTable);
+				$columnsToAdd = [];
+				foreach ($mlTableOptions['fields'] as $f) {
+					if (isset($customTableModel->columns[$f]))
+						$columnsToAdd[$f] = $customTableModel->columns[$f];
+				}
+
+				$tableModel->loadColumns($columnsToAdd, false);
+				break;
+			}
+		}
+
 		if (class_exists('\\Model\\LinkedTables\\LinkedTables')) {
 			$linkedTables = \Model\LinkedTables\LinkedTables::getTables($db);
 
-			$mlTables = Ml::getTablesConfig($db);
 			foreach ($mlTables as $mlTable => $mlTableOptions) {
 				if ($mlTable . $mlTableOptions['table_suffix'] === $table and array_key_exists($mlTable, $linkedTables) and $db->getParser()->tableExists($linkedTables[$mlTable] . $mlTableOptions['table_suffix'])) {
 					$customTableModel = $db->getParser()->getTable($linkedTables[$mlTable] . $mlTableOptions['table_suffix']);
