@@ -366,11 +366,11 @@ class DbProvider extends AbstractDbProvider
 	 */
 	public static function alterTableModel(DbConnection $db, string $table, Table $tableModel): Table
 	{
-		$mlTables = Ml::getTablesConfig($db);
+		$mlTables = Ml::getTables($db);
 
 		foreach ($mlTables as $mlTable => $mlTableOptions) {
-			if ($mlTable === $table . $mlTableOptions['table_suffix'] and $db->getParser()->tableExists($mlTable)) {
-				$customTableModel = $db->getParser()->getTable($mlTable);
+			if ($mlTable === $table and $db->getParser()->tableExists($mlTable)) {
+				$customTableModel = $db->getParser()->getTable($mlTable . $mlTableOptions['table_suffix']);
 				$columnsToAdd = [];
 				foreach ($mlTableOptions['fields'] as $f) {
 					if (isset($customTableModel->columns[$f]))
